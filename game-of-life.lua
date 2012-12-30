@@ -29,10 +29,13 @@ local function loadmap(options)
   end
 
   string.gsub(file:read('*a'), '[#-]+', function(match)
-    table.insert(map, match)
     if #match ~= map.width then
       error 'incorrect file format'
     end
+    map[#map+1] = {}
+    string.gsub(match, '.', function (c)
+      table.insert(map[#map], c == '#')
+    end)
   end)
 
   if #map ~= map.height then
@@ -46,7 +49,10 @@ end
 local function printmap(map, generation)
   print('Generation #' .. generation)
   for y = 1, map.height do
-    print(map[y])
+    for x = 1, map.width do
+      io.write(map[y][x] and '#' or '-')
+    end
+    io.write('\n')
   end
 end
 
@@ -55,28 +61,28 @@ local function rungame(map, options)
   for g = 1, options.generations do
     local newmap = {width = map.width, height = map.height}
     for y = 1, map.height do
-      newmap[y] = ''
+      newmap[y] = {}
       for x = 1, map.width do
         local neighbours = 0
         if map[y-1] then
-          if map[y-1]:sub(x-1, x-1) == '#' then neighbours = neighbours + 1 end
-          if map[y-1]:sub(x, x)     == '#' then neighbours = neighbours + 1 end
-          if map[y-1]:sub(x+1, x+1) == '#' then neighbours = neighbours + 1 end
+          if map[y-1][x-1] then neighbours = neighbours + 1 end
+          if map[y-1][x]   then neighbours = neighbours + 1 end
+          if map[y-1][x+1] then neighbours = neighbours + 1 end
         end
-        if map[y]:sub(x-1, x-1) == '#' then neighbours = neighbours + 1 end
-        if map[y]:sub(x+1, x+1) == '#' then neighbours = neighbours + 1 end
+        if map[y][x-1] then neighbours = neighbours + 1 end
+        if map[y][x+1] then neighbours = neighbours + 1 end
         if map[y+1] then
-          if map[y+1]:sub(x-1, x-1) == '#' then neighbours = neighbours + 1 end
-          if map[y+1]:sub(x, x)     == '#' then neighbours = neighbours + 1 end
-          if map[y+1]:sub(x+1, x+1) == '#' then neighbours = neighbours + 1 end
+          if map[y+1][x-1] then neighbours = neighbours + 1 end
+          if map[y+1][x]   then neighbours = neighbours + 1 end
+          if map[y+1][x+1] then neighbours = neighbours + 1 end
         end
 
-        if map[y]:sub(x, x) == '#' and neighbours ~= 2 and neighbours ~= 3 then
-          newmap[y] = newmap[y] .. '-'
-        elseif map[y]:sub(x, x) == '-' and neighbours == 3 then
-          newmap[y] = newmap[y] .. '#'
+        if map[y][x] and neighbours ~= 2 and neighbours ~= 3 then
+          newmap[y][x] = false
+        elseif not map[y][x] and neighbours == 3 then
+          newmap[y][x] = true
         else
-          newmap[y] = newmap[y] .. map[y]:sub(x, x)
+          newmap[y][x] = map[y][x]
         end
       end
     end
